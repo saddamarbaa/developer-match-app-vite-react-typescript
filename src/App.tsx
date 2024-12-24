@@ -1,3 +1,11 @@
+
+import Layout from './layouts'
+import RouteLayout from './RouteLayout'
+
 export default function App() {
-	return <button className="btn">Button</button>
+	return (
+		<Layout>
+			<RouteLayout />
+		</Layout>
+	)
 }
