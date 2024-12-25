@@ -2,7 +2,7 @@ import { Link } from 'react-router'
 
 export default function NotFoundScreen() {
 	return (
-		<div className="flex items-center justify-center min-h-screen bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500">
+		<div className="flex items-center justify-center min-h-screen bg-gradient-to-r ">
 			<div className="text-center p-6 bg-white bg-opacity-75 rounded-lg shadow-lg max-w-md w-full">
 				<h1 className="text-5xl font-extrabold text-gray-800">Oops!</h1>
 				<p className="mt-4 text-lg text-gray-600">
