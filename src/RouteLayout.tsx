@@ -12,8 +12,11 @@ export default function RouteLayout() {
 
 	return (
 		<Routes key={location.pathname} location={location}>
-			<Route path="/dev" element={<Navigate to="/" />} />
-			<Route path="/" element={<HomeScreen />} />
+			<Route path="/" element={<Navigate to="/feed" />} />
+
+			<Route path="/feed" element={<PrivateRoute />}>
+				<Route path="/feed" element={<HomeScreen />} />
+			</Route>
 
 			<Route path="/profile" element={<PrivateRoute />}>
 				<Route path="/profile" element={<ProfileScreen />} />
