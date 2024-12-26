@@ -32,8 +32,8 @@ export default function Header() {
 
 	async function handleLogout() {
 		mutate({})
-		// dispatch(setLogOutState())
-		// navigate('/sign-in')
+		dispatch(setLogOutState())
+		navigate('/sign-in')
 	}
 
 	return (
@@ -66,10 +66,20 @@ export default function Header() {
 						</div>
 						<ul
 							tabIndex={0}
-							className="menu menu-sm dropdown-content bg-base-100 rounded-box z-[1] mt-3 w-52 p-2 shadow">
+							className="menu menu-sm dropdown-content bg-base-100 rounded-box z-[1] mt-3 w-52 p-2 shadow flex flex-col space-y-3">
 							<li>
 								<Link to={'/profile'}>
 									<a className="justify-between">Profile</a>
+								</Link>
+							</li>
+							<li>
+								<Link to={'/connections'}>
+									<a className="justify-between">Connections</a>
+								</Link>
+							</li>
+							<li>
+								<Link to={'/requests'}>
+									<a className="justify-between">Requests</a>
 								</Link>
 							</li>
 							<li onClick={handleLogout}>

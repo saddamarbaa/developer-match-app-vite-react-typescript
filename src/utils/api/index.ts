@@ -38,6 +38,32 @@ export async function getUserProfile() {
 	return response.data
 }
 
+export async function getFeet() {
+	const response = await axios.get('http://localhost:5001/api/v1/user/feed', {
+		withCredentials: true,
+	})
+	return response.data
+}
+
+export async function fetchConnections(data: {
+	status: string
+	requestId: string
+}) {
+	const response = await axios.post(
+		`http://localhost:5001/api/v1/request/send/${data.status}/${data.requestId}`,
+		{ withCredentials: true },
+	)
+	return response.data
+}
+
+export async function getConnections() {
+	const response = await axios.get(
+		`http://localhost:5001/api/v1/user/match/connections`,
+		{ withCredentials: true },
+	)
+	return response.data
+}
+
 // Function to register a new user
 export async function registerUser(userDetails: {
 	firstName: string
@@ -48,6 +74,23 @@ export async function registerUser(userDetails: {
 }) {
 	const response = await axios.post(
 		'http://localhost:5001/api/v1/auth/signup',
+		userDetails,
+		{ withCredentials: true },
+	)
+	return response.data
+}
+
+export async function updateUserProfile(
+	userId: string,
+	userDetails: {
+		firstName: string
+		lastName: string
+		bio: string
+		profileUrl: string
+	},
+) {
+	const response = await axios.patch(
+		`http://localhost:5001/api/v1/auth/update/${userId}`,
 		userDetails,
 		{ withCredentials: true },
 	)

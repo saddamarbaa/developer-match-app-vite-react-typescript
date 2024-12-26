@@ -16,22 +16,20 @@ export default function PrivateRoute() {
 	const { data, error, isLoading, isSuccess, isError } = useQuery({
 		queryKey: ['userProfile'],
 		queryFn: getUserProfile,
-		enabled: !user,
+		// enabled: !user,
 	})
 
 	useEffect(() => {
 		if (isSuccess && data?.data?.user) {
 			const user = data.data.user
-			dispatch(
-				setLogInState({ authToken: user?.authToken || '', ...user?.user }),
-			)
+			dispatch(setLogInState({ authToken: user?.authToken || '', ...user }))
 		}
 	}, [isSuccess, data, dispatch])
 
 	useEffect(() => {
 		if (isError) {
 			setTimeout(() => {
-				navigate('/sign-in')
+				// navigate('/sign-in')
 			}, 1000)
 		}
 	}, [isError, navigate])
