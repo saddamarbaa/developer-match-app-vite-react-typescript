@@ -18,6 +18,14 @@ export default function Body() {
 
 	return (
 		<div className="flex flex-col items-center space-y-6">
+			{isSuccess && !users.length && (
+				<div className="card bg-base-300 w-96 shadow-xl">
+					<div className="card-body">
+						<p className="text-center">No users found</p>
+					</div>
+				</div>
+			)}
+
 			{users?.map((user: any) => {
 				return <UserCard user={user} key={user?._id} />
 			})}

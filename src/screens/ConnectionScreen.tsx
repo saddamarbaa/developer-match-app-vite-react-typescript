@@ -46,7 +46,7 @@ export default function ConnectionScreen() {
 						</figure>
 						<div className="card-body">
 							<h2 className="card-title">
-								{user?.firstName + '' + user?.lastName}
+								{user?.firstName + ' ' + user?.lastName}
 							</h2>
 							<p>{user?.bio}</p>
 						</div>

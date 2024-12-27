@@ -1,4 +1,4 @@
-import { useMutation } from '@tanstack/react-query'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { IUser } from '../types'
 import { AxiosError } from 'axios'
 import { fetchConnections } from '../utils/api'
@@ -7,6 +7,7 @@ type Props = {
 	user: IUser
 }
 export default function UserCard({ user }: Props) {
+	const queryClient = useQueryClient()
 	const { mutate, isError, isSuccess, error, isPending } = useMutation<
 		unknown,
 		AxiosError,
@@ -14,13 +15,15 @@ export default function UserCard({ user }: Props) {
 		unknown
 	>({
 		mutationFn: fetchConnections,
-		onSuccess: () => {},
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ['userFeed'] })
+		},
 		onError: (err: AxiosError) => {
 			console.error('Login failed:', err)
 		},
 	})
 
-	const handleClick = async (status: 'ignore' | 'interested') => {
+	const handleClick = async (status: 'ignored' | 'interested') => {
 		mutate({ status, requestId: user._id })
 	}
 
@@ -30,12 +33,18 @@ export default function UserCard({ user }: Props) {
 				<img src={user?.profileUrl} alt="user" />
 			</figure>
 			<div className="card-body">
-				<h2 className="card-title">{user?.firstName + '' + user?.lastName}</h2>
+				<h2 className="card-title">{user?.firstName + ' ' + user?.lastName}</h2>
 				{/* <p>{user?.age}</p>
 				<p>{user?.gender}</p> */}
 				<p>{user?.bio}</p>
 				<div className="card-actions space-x-4 flex items-center justify-center cursor-pointer">
-					<button className="btn  btn-primary">Ignore</button>
+					<button
+						className="btn  btn-primary"
+						onClick={() => {
+							handleClick('ignored')
+						}}>
+						Ignore
+					</button>
 					<button
 						className="btn btn-secondary"
 						onClick={() => {
