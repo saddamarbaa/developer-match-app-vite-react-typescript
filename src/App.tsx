@@ -8,8 +8,12 @@ import { ThemeProvider } from '@/components/ThemeProvider'
 import { ProtectedRoute } from '@/components/ProtectedRoute'
 import Index from './pages/Index'
 import Auth from './pages/Auth'
-import NotFound from './pages/NotFound'
 import Profile from './pages/Profile'
+import Matches from './pages/Matches'
+import PendingRequests from './pages/PendingRequests'
+import Messages from './pages/Messages'
+import Chat from './pages/Chat'
+import NotFound from './pages/NotFound'
 
 const queryClient = new QueryClient()
 
@@ -36,6 +40,38 @@ const App = () => (
 								element={
 									<ProtectedRoute>
 										<Profile />
+									</ProtectedRoute>
+								}
+							/>
+							<Route
+								path="/matches"
+								element={
+									<ProtectedRoute>
+										<Matches />
+									</ProtectedRoute>
+								}
+							/>
+							<Route
+								path="/pending"
+								element={
+									<ProtectedRoute>
+										<PendingRequests />
+									</ProtectedRoute>
+								}
+							/>
+							<Route
+								path="/messages"
+								element={
+									<ProtectedRoute>
+										<Messages />
+									</ProtectedRoute>
+								}
+							/>
+							<Route
+								path="/chat/:id"
+								element={
+									<ProtectedRoute>
+										<Chat />
 									</ProtectedRoute>
 								}
 							/>

@@ -117,3 +117,102 @@ export const authApi = {
 		})
 	},
 }
+
+// Feed API endpoints
+export const feedApi = {
+	getFeed: async () => {
+		return apiRequest<{
+			users: Array<{
+				_id: string
+				firstName?: string
+				lastName?: string
+				email?: string
+				gender?: string
+				bio?: string
+				skills?: string[]
+				profileUrl?: string
+			}>
+			pagination: {
+				currentPage: number
+				limit: number
+				totalDocs: number
+				totalPages: number
+				nextPage: number | null
+				prevPage: number | null
+				lastPage: number
+			}
+		}>('/user/feed', {
+			method: 'GET',
+		})
+	},
+}
+
+// Connection Request API endpoints
+export const requestApi = {
+	sendRequest: async (
+		toUserId: string,
+		status: 'interested' | 'ignored' = 'interested',
+	) => {
+		return apiRequest<null>(`/request/send/${status}/${toUserId}`, {
+			method: 'POST',
+		})
+	},
+
+	getConnections: async () => {
+		return apiRequest<
+			Array<{
+				_id: string
+				fromUserId: {
+					_id: string
+					firstName: string
+					lastName: string
+					email: string
+					gender?: string
+					bio?: string
+					skills?: string[]
+					profileUrl?: string
+				}
+				toUserId: {
+					_id: string
+					firstName: string
+					lastName: string
+					email: string
+					gender?: string
+					bio?: string
+					skills?: string[]
+					profileUrl?: string
+				}
+				status: string
+			}>
+		>('/user/match/connections', {
+			method: 'GET',
+		})
+	},
+
+	getPendingRequests: async () => {
+		return apiRequest<
+			Array<{
+				_id: string
+				fromUserId: {
+					_id: string
+					firstName: string
+					lastName: string
+					email: string
+					gender?: string
+					bio?: string
+					skills?: string[]
+					profileUrl?: string
+				}
+				status: string
+			}>
+		>('/user/requests/pending', {
+			method: 'GET',
+		})
+	},
+
+	reviewRequest: async (requestId: string, status: 'accepted' | 'rejected') => {
+		return apiRequest<null>(`/request/review/${status}/${requestId}`, {
+			method: 'POST',
+		})
+	},
+}

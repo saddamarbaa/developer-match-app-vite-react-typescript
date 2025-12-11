@@ -8,7 +8,6 @@ import {
 	FileText,
 	Code,
 	Users,
-	Trash2,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -24,15 +23,6 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import {
-	AlertDialog,
-	AlertDialogAction,
-	AlertDialogCancel,
-	AlertDialogContent,
-	AlertDialogDescription,
-	AlertDialogHeader,
-	AlertDialogTitle,
-} from '@/components/ui/alert-dialog'
 import { useAuth } from '@/contexts/AuthContext'
 import { useToast } from '@/hooks/use-toast'
 import { authApi } from '@/lib/api'
@@ -44,9 +34,6 @@ export default function Profile() {
 
 	const [isEditing, setIsEditing] = useState(false)
 	const [isLoading, setIsLoading] = useState(false)
-	const [isDeleting, setIsDeleting] = useState(false)
-	const [isConfirmDelete, setsConfirmDelete] = useState(false)
-
 	const [formData, setFormData] = useState({
 		firstName: user?.firstName || '',
 		lastName: user?.lastName || '',
@@ -100,30 +87,6 @@ export default function Profile() {
 		setIsLoading(false)
 	}
 
-	const handleDelete = async () => {
-		setIsDeleting(true)
-		const response = await authApi.deleteProfile(user?.id)
-
-		if (response.success) {
-			toast({
-				title: 'Account deleted',
-				description: 'Your profile has been deleted successfully.',
-			})
-			// Clear auth state and redirect
-			localStorage.removeItem('devmatch_token')
-			navigate('/auth')
-		} else {
-			toast({
-				title: 'Delete failed',
-				description: response.message || 'Could not delete profile.',
-				variant: 'destructive',
-			})
-		}
-
-		setIsDeleting(false)
-		setsConfirmDelete(false)
-	}
-
 	return (
 		<div className="min-h-screen bg-background">
 			<header className="flex items-center gap-4 p-4 border-b border-border/50">
@@ -134,7 +97,7 @@ export default function Profile() {
 			</header>
 
 			<main className="max-w-2xl mx-auto p-4 space-y-6">
-				{/* Profile Card */}
+				{/* Avatar Section */}
 				<div className="flex flex-col items-center gap-4">
 					<Avatar className="h-24 w-24 border-2 border-primary">
 						<AvatarImage src={user?.avatar} alt={user?.name} />
@@ -156,19 +119,9 @@ export default function Profile() {
 							Profile Details
 						</CardTitle>
 						{!isEditing ? (
-							<div className="flex space-x-2">
-								<Button variant="outline" onClick={() => setIsEditing(true)}>
-									Edit Profile
-								</Button>
-
-								<Button
-									variant="outline"
-									onClick={() => setsConfirmDelete(true)}
-									className="bg-red-500 hover:bg-red-700 border-red-700 text-white hover:border-red-900">
-									<Trash2 className="w-4 h-4 mr-2" />
-									Delete Account
-								</Button>
-							</div>
+							<Button variant="outline" onClick={() => setIsEditing(true)}>
+								Edit Profile
+							</Button>
 						) : (
 							<div className="flex gap-2">
 								<Button variant="ghost" onClick={() => setIsEditing(false)}>
@@ -333,29 +286,6 @@ export default function Profile() {
 					</CardContent>
 				</Card>
 			</main>
-
-			{/* Delete Confirmation Dialog */}
-			<AlertDialog open={isConfirmDelete} onOpenChange={setsConfirmDelete}>
-				<AlertDialogContent>
-					<AlertDialogHeader>
-						<AlertDialogTitle>Delete Account</AlertDialogTitle>
-						<AlertDialogDescription>
-							Are you sure you want to delete your account? This action cannot
-							be undone. All your profile information and data will be
-							permanently deleted.
-						</AlertDialogDescription>
-					</AlertDialogHeader>
-					<div className="flex gap-3 justify-end">
-						<AlertDialogCancel>Cancel</AlertDialogCancel>
-						<AlertDialogAction
-							onClick={handleDelete}
-							disabled={isDeleting}
-							className="bg-red-600 hover:bg-red-700">
-							{isDeleting ? 'Deleting...' : 'Delete Account'}
-						</AlertDialogAction>
-					</div>
-				</AlertDialogContent>
-			</AlertDialog>
 		</div>
 	)
 }

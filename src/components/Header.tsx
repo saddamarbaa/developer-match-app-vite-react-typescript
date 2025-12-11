@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom'
-import { Code2, User, MessageSquare, LogOut } from 'lucide-react'
+import { Code2, User, MessageSquare, LogOut, Heart, Clock } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useAuth } from '@/contexts/AuthContext'
 import { ThemeToggle } from '@/components/ThemeToggle'
@@ -49,7 +49,15 @@ export function Header({ matchCount }: HeaderProps) {
 					<DropdownMenuSeparator />
 					<DropdownMenuItem onClick={() => navigate('/profile')}>
 						<User className="w-4 h-4 mr-2" />
-						Profile
+						Edit Profile
+					</DropdownMenuItem>
+					<DropdownMenuItem onClick={() => navigate('/matches')}>
+						<Heart className="w-4 h-4 mr-2" />
+						My Matches
+					</DropdownMenuItem>
+					<DropdownMenuItem onClick={() => navigate('/pending')}>
+						<Clock className="w-4 h-4 mr-2" />
+						Pending Requests
 					</DropdownMenuItem>
 					<DropdownMenuSeparator />
 					<DropdownMenuItem onClick={logout} className="text-destructive">
@@ -69,7 +77,11 @@ export function Header({ matchCount }: HeaderProps) {
 
 			<div className="flex items-center gap-1">
 				<ThemeToggle />
-				<Button variant="ghost" size="icon" className="relative">
+				<Button
+					variant="ghost"
+					size="icon"
+					className="relative"
+					onClick={() => navigate('/messages')}>
 					<MessageSquare className="w-5 h-5" />
 					{matchCount > 0 && (
 						<span className="absolute -top-1 -right-1 w-5 h-5 bg-primary text-primary-foreground text-[10px] font-bold rounded-full flex items-center justify-center">
