@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
 	ArrowLeft,
@@ -8,6 +8,8 @@ import {
 	FileText,
 	Code,
 	Users,
+	Camera,
+	AlertCircle,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -27,6 +29,18 @@ import { useAuth } from '@/contexts/AuthContext'
 import { useToast } from '@/hooks/use-toast'
 import { authApi } from '@/lib/api'
 
+interface ValidationErrors {
+	firstName?: string
+	lastName?: string
+	email?: string
+	bio?: string
+}
+
+const validateEmail = (email: string): boolean => {
+	const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+	return emailRegex.test(email)
+}
+
 export default function Profile() {
 	const navigate = useNavigate()
 	const { user, refreshProfile } = useAuth()
@@ -34,6 +48,10 @@ export default function Profile() {
 
 	const [isEditing, setIsEditing] = useState(false)
 	const [isLoading, setIsLoading] = useState(false)
+	const [isUploading, setIsUploading] = useState(false)
+	const [errors, setErrors] = useState<ValidationErrors>({})
+	const [touched, setTouched] = useState<Record<string, boolean>>({})
+	const fileInputRef = useRef<HTMLInputElement>(null)
 	const [formData, setFormData] = useState({
 		firstName: user?.firstName || '',
 		lastName: user?.lastName || '',
@@ -51,7 +69,123 @@ export default function Profile() {
 			.join('')
 			.toUpperCase() || 'U'
 
+	const validateForm = useMemo(() => {
+		const newErrors: ValidationErrors = {}
+
+		if (!formData.firstName.trim()) {
+			newErrors.firstName = 'First name is required'
+		} else if (formData.firstName.trim().length < 2) {
+			newErrors.firstName = 'First name must be at least 2 characters'
+		} else if (formData.firstName.trim().length > 50) {
+			newErrors.firstName = 'First name must be less than 50 characters'
+		}
+
+		if (!formData.lastName.trim()) {
+			newErrors.lastName = 'Last name is required'
+		} else if (formData.lastName.trim().length < 2) {
+			newErrors.lastName = 'Last name must be at least 2 characters'
+		} else if (formData.lastName.trim().length > 50) {
+			newErrors.lastName = 'Last name must be less than 50 characters'
+		}
+
+		if (!formData.email.trim()) {
+			newErrors.email = 'Email is required'
+		} else if (!validateEmail(formData.email.trim())) {
+			newErrors.email = 'Please enter a valid email address'
+		}
+
+		if (formData.bio.length > 500) {
+			newErrors.bio = 'Bio must be less than 500 characters'
+		}
+
+		return newErrors
+	}, [formData.firstName, formData.lastName, formData.email, formData.bio])
+
+	const isFormValid = Object.keys(validateForm).length === 0
+
+	const handleBlur = (field: string) => {
+		setTouched((prev) => ({ ...prev, [field]: true }))
+		setErrors(validateForm)
+	}
+
+	const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+		const file = e.target.files?.[0]
+		if (!file) return
+
+		// Validate file type
+		if (!file.type.startsWith('image/')) {
+			toast({
+				title: 'Invalid file type',
+				description: 'Please select an image file.',
+				variant: 'destructive',
+			})
+			return
+		}
+
+		// Validate file size (max 5MB)
+		if (file.size > 5 * 1024 * 1024) {
+			toast({
+				title: 'File too large',
+				description: 'Please select an image under 5MB.',
+				variant: 'destructive',
+			})
+			return
+		}
+
+		setIsUploading(true)
+
+		// Convert to base64
+		const reader = new FileReader()
+		reader.onloadend = async () => {
+			const base64String = reader.result as string
+
+			// Update profile with new image
+			const response = await authApi.updateProfile(user?.id || '', {
+				profileUrl: base64String,
+			})
+
+			if (response.success) {
+				toast({
+					title: 'Avatar updated',
+					description: 'Your profile picture has been updated.',
+				})
+				await refreshProfile()
+				setFormData((prev) => ({ ...prev, profileUrl: base64String }))
+			} else {
+				toast({
+					title: 'Upload failed',
+					description: response.message || 'Failed to update avatar.',
+					variant: 'destructive',
+				})
+			}
+			setIsUploading(false)
+		}
+		reader.onerror = () => {
+			toast({
+				title: 'Upload failed',
+				description: 'Failed to read the image file.',
+				variant: 'destructive',
+			})
+			setIsUploading(false)
+		}
+		reader.readAsDataURL(file)
+	}
+
 	const handleSave = async () => {
+		// Mark all fields as touched
+		setTouched({ firstName: true, lastName: true, email: true, bio: true })
+		const validationErrors = validateForm
+		setErrors(validationErrors)
+
+		if (Object.keys(validationErrors).length > 0) {
+			toast({
+				title: 'Validation Error',
+				description: 'Please fix the errors before saving.',
+				variant: 'destructive',
+			})
+			return
+		}
+
 		setIsLoading(true)
 
 		const skillsArray = formData.skills
@@ -60,11 +194,11 @@ export default function Profile() {
 			.filter((s) => s.length > 0)
 
 		const response = await authApi.updateProfile(user?.id || '', {
-			firstName: formData.firstName,
-			lastName: formData.lastName,
-			email: formData.email,
+			firstName: formData.firstName.trim(),
+			lastName: formData.lastName.trim(),
+			email: formData.email.trim(),
 			gender: formData.gender,
-			bio: formData.bio,
+			bio: formData.bio.trim(),
 			skills: skillsArray,
 			profileUrl: formData.profileUrl,
 		})
@@ -76,6 +210,8 @@ export default function Profile() {
 			})
 			await refreshProfile()
 			setIsEditing(false)
+			setTouched({})
+			setErrors({})
 		} else {
 			toast({
 				title: 'Update failed',
@@ -85,6 +221,31 @@ export default function Profile() {
 		}
 
 		setIsLoading(false)
+	}
+
+	const handleCancel = () => {
+		setIsEditing(false)
+		setTouched({})
+		setErrors({})
+		setFormData({
+			firstName: user?.firstName || '',
+			lastName: user?.lastName || '',
+			email: user?.email || '',
+			gender: user?.gender || '',
+			bio: user?.bio || '',
+			skills: user?.skills?.join(', ') || '',
+			profileUrl: user?.avatar || '',
+		})
+	}
+
+	const ErrorMessage = ({ message }: { message?: string }) => {
+		if (!message) return null
+		return (
+			<p className="flex items-center gap-1 text-sm text-destructive mt-1">
+				<AlertCircle className="w-3 h-3" />
+				{message}
+			</p>
+		)
 	}
 
 	return (
@@ -99,15 +260,37 @@ export default function Profile() {
 			<main className="max-w-2xl mx-auto p-4 space-y-6">
 				{/* Avatar Section */}
 				<div className="flex flex-col items-center gap-4">
-					<Avatar className="h-24 w-24 border-2 border-primary">
-						<AvatarImage src={user?.avatar} alt={user?.name} />
-						<AvatarFallback className="bg-secondary text-2xl">
-							{initials}
-						</AvatarFallback>
-					</Avatar>
+					<div className="relative group">
+						<Avatar className="h-24 w-24 border-2 border-primary">
+							<AvatarImage src={user?.avatar} alt={user?.name} />
+							<AvatarFallback className="bg-secondary text-2xl">
+								{initials}
+							</AvatarFallback>
+						</Avatar>
+						<button
+							onClick={() => fileInputRef.current?.click()}
+							disabled={isUploading}
+							className="absolute inset-0 flex items-center justify-center bg-background/80 rounded-full opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer disabled:cursor-not-allowed">
+							{isUploading ? (
+								<div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+							) : (
+								<Camera className="w-6 h-6 text-primary" />
+							)}
+						</button>
+						<input
+							ref={fileInputRef}
+							type="file"
+							accept="image/*"
+							onChange={handleImageUpload}
+							className="hidden"
+						/>
+					</div>
 					<div className="text-center">
 						<h2 className="text-2xl font-bold">{user?.name}</h2>
 						<p className="text-muted-foreground">{user?.email}</p>
+						<p className="text-xs text-muted-foreground mt-1">
+							Click avatar to upload new photo
+						</p>
 					</div>
 				</div>
 
@@ -124,10 +307,12 @@ export default function Profile() {
 							</Button>
 						) : (
 							<div className="flex gap-2">
-								<Button variant="ghost" onClick={() => setIsEditing(false)}>
+								<Button variant="ghost" onClick={handleCancel}>
 									Cancel
 								</Button>
-								<Button onClick={handleSave} disabled={isLoading}>
+								<Button
+									onClick={handleSave}
+									disabled={isLoading || !isFormValid}>
 									<Save className="w-4 h-4 mr-2" />
 									{isLoading ? 'Saving...' : 'Save'}
 								</Button>
@@ -139,31 +324,55 @@ export default function Profile() {
 							<>
 								<div className="grid grid-cols-2 gap-4">
 									<div className="space-y-2">
-										<Label htmlFor="firstName">First Name</Label>
+										<Label htmlFor="firstName">
+											First Name <span className="text-destructive">*</span>
+										</Label>
 										<Input
 											id="firstName"
 											value={formData.firstName}
 											onChange={(e) =>
 												setFormData({ ...formData, firstName: e.target.value })
 											}
+											onBlur={() => handleBlur('firstName')}
 											placeholder="Enter first name"
+											className={
+												touched.firstName && errors.firstName
+													? 'border-destructive'
+													: ''
+											}
 										/>
+										{touched.firstName && (
+											<ErrorMessage message={errors.firstName} />
+										)}
 									</div>
 									<div className="space-y-2">
-										<Label htmlFor="lastName">Last Name</Label>
+										<Label htmlFor="lastName">
+											Last Name <span className="text-destructive">*</span>
+										</Label>
 										<Input
 											id="lastName"
 											value={formData.lastName}
 											onChange={(e) =>
 												setFormData({ ...formData, lastName: e.target.value })
 											}
+											onBlur={() => handleBlur('lastName')}
 											placeholder="Enter last name"
+											className={
+												touched.lastName && errors.lastName
+													? 'border-destructive'
+													: ''
+											}
 										/>
+										{touched.lastName && (
+											<ErrorMessage message={errors.lastName} />
+										)}
 									</div>
 								</div>
 
 								<div className="space-y-2">
-									<Label htmlFor="email">Email</Label>
+									<Label htmlFor="email">
+										Email <span className="text-destructive">*</span>
+									</Label>
 									<Input
 										id="email"
 										type="email"
@@ -171,8 +380,13 @@ export default function Profile() {
 										onChange={(e) =>
 											setFormData({ ...formData, email: e.target.value })
 										}
+										onBlur={() => handleBlur('email')}
 										placeholder="Enter email"
+										className={
+											touched.email && errors.email ? 'border-destructive' : ''
+										}
 									/>
+									{touched.email && <ErrorMessage message={errors.email} />}
 								</div>
 
 								<div className="space-y-2">
@@ -206,16 +420,31 @@ export default function Profile() {
 								</div>
 
 								<div className="space-y-2">
-									<Label htmlFor="bio">Bio</Label>
+									<div className="flex justify-between">
+										<Label htmlFor="bio">Bio</Label>
+										<span
+											className={`text-xs ${
+												formData.bio.length > 500
+													? 'text-destructive'
+													: 'text-muted-foreground'
+											}`}>
+											{formData.bio.length}/500
+										</span>
+									</div>
 									<Textarea
 										id="bio"
 										value={formData.bio}
 										onChange={(e) =>
 											setFormData({ ...formData, bio: e.target.value })
 										}
+										onBlur={() => handleBlur('bio')}
 										placeholder="Tell us about yourself..."
 										rows={4}
+										className={
+											touched.bio && errors.bio ? 'border-destructive' : ''
+										}
 									/>
+									{touched.bio && <ErrorMessage message={errors.bio} />}
 								</div>
 
 								<div className="space-y-2">

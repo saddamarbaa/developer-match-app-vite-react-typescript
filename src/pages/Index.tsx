@@ -1,10 +1,11 @@
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback, useEffect, useMemo } from 'react'
 import { AnimatePresence } from 'framer-motion'
 import { DevCard } from '@/components/DevCard'
 import { SwipeButtons } from '@/components/SwipeButtons'
 import { MatchModal } from '@/components/MatchModal'
 import { Header } from '@/components/Header'
 import { EmptyState } from '@/components/EmptyState'
+import { FeedFilters } from '@/components/FeedFilters'
 import { Developer, SwipeDirection } from '@/types/developer'
 import { toast } from '@/hooks/use-toast'
 import { feedApi, requestApi } from '@/lib/api'
@@ -16,6 +17,8 @@ const Index = () => {
 	const [history, setHistory] = useState<number[]>([])
 	const [allDevs, setAllDevs] = useState<Developer[]>([])
 	const [isLoading, setIsLoading] = useState(true)
+	const [searchQuery, setSearchQuery] = useState('')
+	const [selectedSkills, setSelectedSkills] = useState<string[]>([])
 
 	const fetchFeed = useCallback(async () => {
 		setIsLoading(true)
@@ -52,9 +55,27 @@ const Index = () => {
 		fetchFeed()
 	}, [fetchFeed])
 
-	const currentDev = allDevs[currentIndex]
-	const nextDev = allDevs[currentIndex + 1]
-	const isComplete = currentIndex >= allDevs.length
+	// Filter developers based on search and skills
+	const filteredDevs = useMemo(() => {
+		return allDevs.filter((dev) => {
+			const matchesSearch = searchQuery
+				? dev.name.toLowerCase().includes(searchQuery.toLowerCase())
+				: true
+			const matchesSkills =
+				selectedSkills.length > 0
+					? selectedSkills.some((skill) =>
+							dev.skills
+								.map((s) => s.toLowerCase())
+								.includes(skill.toLowerCase()),
+					  )
+					: true
+			return matchesSearch && matchesSkills
+		})
+	}, [allDevs, searchQuery, selectedSkills])
+
+	const currentDev = filteredDevs[currentIndex]
+	const nextDev = filteredDevs[currentIndex + 1]
+	const isComplete = currentIndex >= filteredDevs.length
 
 	const handleSwipe = useCallback(
 		async (direction: SwipeDirection) => {
@@ -135,8 +156,24 @@ const Index = () => {
 			<Header matchCount={matches.length} />
 
 			<main className="flex-1 flex flex-col max-w-md mx-auto w-full px-4 pb-4">
+				{/* Search and Filters */}
+				<FeedFilters
+					searchQuery={searchQuery}
+					onSearchChange={(query) => {
+						setSearchQuery(query)
+						setCurrentIndex(0)
+						setHistory([])
+					}}
+					selectedSkills={selectedSkills}
+					onSkillsChange={(skills) => {
+						setSelectedSkills(skills)
+						setCurrentIndex(0)
+						setHistory([])
+					}}
+				/>
+
 				{/* Card stack */}
-				<div className="flex-1 relative mt-4 mb-4">
+				<div className="flex-1 relative mb-4">
 					{isLoading ? (
 						<div className="absolute inset-0 flex items-center justify-center">
 							<div className="text-muted-foreground">Loading developers...</div>
