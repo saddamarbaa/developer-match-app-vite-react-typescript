@@ -131,6 +131,7 @@ export const feedApi = {
 				bio?: string
 				skills?: string[]
 				profileUrl?: string
+				username?: string
 			}>
 			pagination: {
 				currentPage: number

@@ -24,20 +24,27 @@ const Index = () => {
 		setIsLoading(true)
 		const response = await feedApi.getFeed()
 		if (response.success && response.data) {
-			const mappedDevs: Developer[] = response.data?.users?.map((user) => ({
-				id: user._id,
-				name: `${user.firstName} ${user.lastName}`,
-				age: 25, // Default age as API doesn't provide it
-				avatar: user.profileUrl || '/placeholder.svg',
-				title: user.bio?.split('.')[0] || 'Developer',
-				bio: user.bio || 'No bio available',
-				location: 'Remote',
-				experience: 2,
-				skills: user.skills || [],
-				lookingFor: 'collaborator' as const,
-				github: user.email?.split('@')[0],
-				availability: 'flexible' as const,
-			}))
+			const mappedDevs: Developer[] = response.data?.users?.map((user) => {
+				return {
+					id: user._id,
+					name:
+						user?.username ||
+						user?.firstName ||
+						user.lastName ||
+						user.email ||
+						'Unknown User',
+					age: 25, // Default age as API doesn't provide it
+					avatar: user.profileUrl || '/placeholder.svg',
+					title: user.bio?.split('.')[0] || 'Developer',
+					bio: user.bio || 'No bio available',
+					location: 'Remote',
+					experience: 2,
+					skills: user.skills || [],
+					lookingFor: 'collaborator' as const,
+					github: user.email?.split('@')[0],
+					availability: 'flexible' as const,
+				}
+			})
 			setAllDevs(mappedDevs)
 			setCurrentIndex(0)
 			setHistory([])
