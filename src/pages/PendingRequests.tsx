@@ -7,6 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import { Check, X, Clock } from 'lucide-react'
 import { toast } from '@/hooks/use-toast'
+import { RequestListSkeleton } from '@/components/skeletons/RequestCardSkeleton'
 
 interface PendingRequest {
 	requestId: string
@@ -102,9 +103,7 @@ const PendingRequests = () => {
 				</div>
 
 				{isLoading ? (
-					<div className="flex items-center justify-center py-12">
-						<div className="text-muted-foreground">Loading requests...</div>
-					</div>
+					<RequestListSkeleton />
 				) : requests.length === 0 ? (
 					<Card className="bg-card/50 backdrop-blur-sm border-border/50">
 						<CardContent className="flex flex-col items-center justify-center py-12">

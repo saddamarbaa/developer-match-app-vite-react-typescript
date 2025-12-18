@@ -6,6 +6,8 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { MessageCircle } from 'lucide-react'
 import { toast } from '@/hooks/use-toast'
+import { ConversationListSkeleton } from '@/components/skeletons/ConversationSkeleton'
+import { Button } from '@/components/ui/button'
 
 interface Conversation {
 	id: string
@@ -73,11 +75,7 @@ const Messages = () => {
 				</div>
 
 				{isLoading ? (
-					<div className="flex items-center justify-center py-12">
-						<div className="text-muted-foreground">
-							Loading conversations...
-						</div>
-					</div>
+					<ConversationListSkeleton />
 				) : conversations.length === 0 ? (
 					<Card className="bg-card/50 backdrop-blur-sm border-border/50">
 						<CardContent className="flex flex-col items-center justify-center py-12">
@@ -88,6 +86,12 @@ const Messages = () => {
 							<p className="text-sm text-muted-foreground text-center">
 								Match with developers to start chatting!
 							</p>
+							<Button
+								variant="default"
+								className="mt-4"
+								onClick={() => (window.location.href = '/')}>
+								Start Swiping
+							</Button>
 						</CardContent>
 					</Card>
 				) : (

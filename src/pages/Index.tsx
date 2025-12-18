@@ -6,10 +6,10 @@ import { MatchModal } from '@/components/MatchModal'
 import { Header } from '@/components/Header'
 import { EmptyState } from '@/components/EmptyState'
 import { FeedFilters } from '@/components/FeedFilters'
+import { DevCardSkeleton } from '@/components/skeletons/DevCardSkeleton'
 import { Developer, SwipeDirection } from '@/types/developer'
 import { toast } from '@/hooks/use-toast'
 import { feedApi, requestApi } from '@/lib/api'
-
 const Index = () => {
 	const [currentIndex, setCurrentIndex] = useState(0)
 	const [matches, setMatches] = useState<Developer[]>([])
@@ -171,13 +171,10 @@ const Index = () => {
 						setHistory([])
 					}}
 				/>
-
 				{/* Card stack */}
 				<div className="flex-1 relative mb-4">
 					{isLoading ? (
-						<div className="absolute inset-0 flex items-center justify-center">
-							<div className="text-muted-foreground">Loading developers...</div>
-						</div>
+						<DevCardSkeleton />
 					) : isComplete ? (
 						<EmptyState onRefresh={handleRefresh} />
 					) : (
@@ -205,13 +202,15 @@ const Index = () => {
 					)}
 				</div>
 
-				{/* Swipe buttons */}
-				<SwipeButtons
-					onSwipe={handleSwipe}
-					onUndo={handleUndo}
-					canUndo={history.length > 0}
-					disabled={isComplete}
-				/>
+				{/* Swipe buttons  */}
+				{!isLoading && (
+					<SwipeButtons
+						onSwipe={handleSwipe}
+						onUndo={handleUndo}
+						canUndo={history.length > 0}
+						disabled={isComplete}
+					/>
+				)}
 			</main>
 
 			{/* Match modal */}

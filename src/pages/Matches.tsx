@@ -7,6 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import { MessageCircle, Github } from 'lucide-react'
 import { toast } from '@/hooks/use-toast'
+import { MatchListSkeleton } from '@/components/skeletons/MatchCardSkeleton'
 
 interface Connection {
 	id: string
@@ -67,9 +68,7 @@ const Matches = () => {
 				</h1>
 
 				{isLoading ? (
-					<div className="flex items-center justify-center py-12">
-						<div className="text-muted-foreground">Loading matches...</div>
-					</div>
+					<MatchListSkeleton />
 				) : connections.length === 0 ? (
 					<Card className="bg-card/50 backdrop-blur-sm border-border/50">
 						<CardContent className="flex flex-col items-center justify-center py-12">
