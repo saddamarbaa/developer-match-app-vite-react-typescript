@@ -241,7 +241,7 @@ export default function Profile() {
 	const ErrorMessage = ({ message }: { message?: string }) => {
 		if (!message) return null
 		return (
-			<p className="flex items-center gap-1 text-sm text-destructive mt-1">
+			<p className="flex items-center gap-1 mt-1 text-destructive text-sm">
 				<AlertCircle className="w-3 h-3" />
 				{message}
 			</p>
@@ -249,19 +249,19 @@ export default function Profile() {
 	}
 
 	return (
-		<div className="min-h-screen bg-background">
-			<header className="flex items-center gap-4 p-4 border-b border-border/50">
+		<div className="bg-background min-h-screen">
+			<header className="flex items-center gap-4 p-4 border-border/50 border-b">
 				<Button variant="ghost" size="icon" onClick={() => navigate('/')}>
 					<ArrowLeft className="w-5 h-5" />
 				</Button>
-				<h1 className="text-xl font-bold gradient-text">Profile</h1>
+				<h1 className="font-bold text-xl gradient-text">Profile</h1>
 			</header>
 
-			<main className="max-w-2xl mx-auto p-4 space-y-6">
+			<main className="space-y-6 mx-auto p-4 max-w-2xl">
 				{/* Avatar Section */}
 				<div className="flex flex-col items-center gap-4">
-					<div className="relative group">
-						<Avatar className="h-24 w-24 border-2 border-primary">
+					<div className="group relative">
+						<Avatar className="border-2 border-primary w-24 h-24">
 							<AvatarImage src={user?.avatar} alt={user?.name} />
 							<AvatarFallback className="bg-secondary text-2xl">
 								{initials}
@@ -270,9 +270,9 @@ export default function Profile() {
 						<button
 							onClick={() => fileInputRef.current?.click()}
 							disabled={isUploading}
-							className="absolute inset-0 flex items-center justify-center bg-background/80 rounded-full opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer disabled:cursor-not-allowed">
+							className="absolute inset-0 flex justify-center items-center bg-background/80 opacity-0 group-hover:opacity-100 rounded-full transition-opacity cursor-pointer disabled:cursor-not-allowed">
 							{isUploading ? (
-								<div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+								<div className="border-2 border-primary border-t-transparent rounded-full w-6 h-6 animate-spin" />
 							) : (
 								<Camera className="w-6 h-6 text-primary" />
 							)}
@@ -286,9 +286,9 @@ export default function Profile() {
 						/>
 					</div>
 					<div className="text-center">
-						<h2 className="text-2xl font-bold">{user?.name}</h2>
+						<h2 className="font-bold text-2xl">{user?.name}</h2>
 						<p className="text-muted-foreground">{user?.email}</p>
-						<p className="text-xs text-muted-foreground mt-1">
+						<p className="mt-1 text-muted-foreground text-xs">
 							Click avatar to upload new photo
 						</p>
 					</div>
@@ -296,7 +296,7 @@ export default function Profile() {
 
 				{/* Profile Card */}
 				<Card className="glass-card">
-					<CardHeader className="flex flex-row items-center justify-between">
+					<CardHeader className="flex flex-row justify-between items-center">
 						<CardTitle className="flex items-center gap-2">
 							<User className="w-5 h-5 text-primary" />
 							Profile Details
@@ -313,7 +313,7 @@ export default function Profile() {
 								<Button
 									onClick={handleSave}
 									disabled={isLoading || !isFormValid}>
-									<Save className="w-4 h-4 mr-2" />
+									<Save className="mr-2 w-4 h-4" />
 									{isLoading ? 'Saving...' : 'Save'}
 								</Button>
 							</div>
@@ -322,7 +322,7 @@ export default function Profile() {
 					<CardContent className="space-y-6">
 						{isEditing ? (
 							<>
-								<div className="grid grid-cols-2 gap-4">
+								<div className="gap-4 grid grid-cols-2">
 									<div className="space-y-2">
 										<Label htmlFor="firstName">
 											First Name <span className="text-destructive">*</span>
@@ -462,18 +462,42 @@ export default function Profile() {
 						) : (
 							<>
 								<div className="space-y-4">
+									{user?.firstName && (
+										<div className="flex items-start gap-3">
+											<User className="mt-0.5 w-5 h-5 text-muted-foreground" />
+											<div>
+												<p className="text-muted-foreground text-sm">
+													First Name
+												</p>
+												<p className="font-medium">{user.firstName}</p>
+											</div>
+										</div>
+									)}
+
+									{user?.lastName && (
+										<div className="flex items-start gap-3">
+											<User className="mt-0.5 w-5 h-5 text-muted-foreground" />
+											<div>
+												<p className="text-muted-foreground text-sm">
+													Last Name
+												</p>
+												<p className="font-medium">{user.lastName}</p>
+											</div>
+										</div>
+									)}
+
 									<div className="flex items-start gap-3">
-										<Mail className="w-5 h-5 text-muted-foreground mt-0.5" />
+										<Mail className="mt-0.5 w-5 h-5 text-muted-foreground" />
 										<div>
-											<p className="text-sm text-muted-foreground">Email</p>
+											<p className="text-muted-foreground text-sm">Email</p>
 											<p className="font-medium">{user?.email}</p>
 										</div>
 									</div>
 
 									<div className="flex items-start gap-3">
-										<Users className="w-5 h-5 text-muted-foreground mt-0.5" />
+										<Users className="mt-0.5 w-5 h-5 text-muted-foreground" />
 										<div>
-											<p className="text-sm text-muted-foreground">Gender</p>
+											<p className="text-muted-foreground text-sm">Gender</p>
 											<p className="font-medium capitalize">
 												{user?.gender || 'Not specified'}
 											</p>
@@ -481,9 +505,9 @@ export default function Profile() {
 									</div>
 
 									<div className="flex items-start gap-3">
-										<FileText className="w-5 h-5 text-muted-foreground mt-0.5" />
+										<FileText className="mt-0.5 w-5 h-5 text-muted-foreground" />
 										<div>
-											<p className="text-sm text-muted-foreground">Bio</p>
+											<p className="text-muted-foreground text-sm">Bio</p>
 											<p className="font-medium">
 												{user?.bio || 'No bio added yet'}
 											</p>
@@ -491,9 +515,9 @@ export default function Profile() {
 									</div>
 
 									<div className="flex items-start gap-3">
-										<Code className="w-5 h-5 text-muted-foreground mt-0.5" />
+										<Code className="mt-0.5 w-5 h-5 text-muted-foreground" />
 										<div>
-											<p className="text-sm text-muted-foreground">Skills</p>
+											<p className="text-muted-foreground text-sm">Skills</p>
 											<div className="flex flex-wrap gap-2 mt-1">
 												{user?.skills && user.skills.length > 0 ? (
 													user.skills.map((skill) => (

@@ -1,3 +1,5 @@
+import { Connection } from '@/types/developer'
+
 // API Configuration
 export const API_BASE_URL = 'http://localhost:8000/api/v1'
 
@@ -43,10 +45,14 @@ export async function apiRequest<T>(
 export const authApi = {
 	signup: async (userData: {
 		firstName: string
-		lastName: string
+		lastName?: string
 		email: string
 		password: string
 		confirmPassword: string
+		gender?: string
+		bio?: string
+		skills?: string[]
+		acceptTerms?: boolean
 	}) => {
 		return apiRequest<null>('/auth/signup', {
 			method: 'POST',
@@ -160,32 +166,7 @@ export const requestApi = {
 	},
 
 	getConnections: async () => {
-		return apiRequest<
-			Array<{
-				_id: string
-				fromUserId: {
-					_id: string
-					firstName: string
-					lastName: string
-					email: string
-					gender?: string
-					bio?: string
-					skills?: string[]
-					profileUrl?: string
-				}
-				toUserId: {
-					_id: string
-					firstName: string
-					lastName: string
-					email: string
-					gender?: string
-					bio?: string
-					skills?: string[]
-					profileUrl?: string
-				}
-				status: string
-			}>
-		>('/user/match/connections', {
+		return apiRequest<Array<Connection>>('/user/match/connections', {
 			method: 'GET',
 		})
 	},
@@ -214,6 +195,26 @@ export const requestApi = {
 	reviewRequest: async (requestId: string, status: 'accepted' | 'rejected') => {
 		return apiRequest<null>(`/request/review/${status}/${requestId}`, {
 			method: 'POST',
+		})
+	},
+	getRejected: async () => {
+		return apiRequest<
+			Array<{
+				_id: string
+				toUserId: {
+					_id: string
+					firstName: string
+					lastName: string
+					email: string
+					gender?: string
+					bio?: string
+					skills?: string[]
+					profileUrl?: string
+				}
+				status: string
+			}>
+		>('/user/requests/ignored', {
+			method: 'GET',
 		})
 	},
 }

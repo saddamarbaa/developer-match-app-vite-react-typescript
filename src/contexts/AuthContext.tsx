@@ -20,15 +20,23 @@ interface User {
 	avatar?: string
 }
 
+type SignupPayload = {
+	email: string
+	password: string
+	confirmPassword: string
+	firstName: string
+	lastName?: string
+	gender?: string
+	bio?: string
+	skills?: string[]
+	acceptTerms?: boolean
+}
+
 interface AuthContextType {
 	user: User | null
 	isLoading: boolean
 	login: (email: string, password: string) => Promise<{ error?: string }>
-	signup: (
-		email: string,
-		password: string,
-		name: string,
-	) => Promise<{ error?: string }>
+	signup: (payload: SignupPayload) => Promise<{ error?: string }>
 	logout: () => void
 	refreshProfile: () => Promise<void>
 }
@@ -116,20 +124,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 	}, [])
 
 	const signup = useCallback(
-		async (email: string, password: string, name: string) => {
+		async (payload: SignupPayload) => {
 			setIsLoading(true)
 
-			// Split name into first and last name
-			const nameParts = name.trim().split(' ')
-			const firstName = nameParts[0] || name
-			const lastName = nameParts.slice(1).join(' ') || 'User'
-
 			const response = await authApi.signup({
-				firstName,
-				lastName,
-				email,
-				password,
-				confirmPassword: password,
+				firstName: payload.firstName,
+				lastName: payload.lastName,
+				email: payload.email,
+				password: payload.password,
+				confirmPassword: payload.confirmPassword,
+				gender: payload.gender,
+				bio: payload.bio,
+				skills: payload.skills,
+				acceptTerms: payload.acceptTerms,
 			})
 
 			if (!response.success) {
@@ -138,7 +145,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 			}
 
 			// After signup, auto-login the user
-			const loginResult = await login(email, password)
+			const loginResult = await login(payload.email, payload.password)
 
 			if (loginResult.error) {
 				setIsLoading(false)

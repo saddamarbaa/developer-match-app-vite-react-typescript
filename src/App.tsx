@@ -13,6 +13,7 @@ import Auth from './pages/Auth'
 import Profile from './pages/Profile'
 import Matches from './pages/Matches'
 import PendingRequests from './pages/PendingRequests'
+import Rejected from './pages/Rejected'
 import Messages from './pages/Messages'
 import Chat from './pages/Chat'
 import NotFound from './pages/NotFound'
@@ -69,6 +70,16 @@ function AnimatedRoutes() {
 						<ProtectedRoute>
 							<PageTransition>
 								<PendingRequests />
+							</PageTransition>
+						</ProtectedRoute>
+					}
+				/>
+				<Route
+					path="/rejected"
+					element={
+						<ProtectedRoute>
+							<PageTransition>
+								<Rejected />
 							</PageTransition>
 						</ProtectedRoute>
 					}
