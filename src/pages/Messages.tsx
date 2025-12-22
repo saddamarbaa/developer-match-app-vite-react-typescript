@@ -28,14 +28,25 @@ const Messages = () => {
 			setIsLoading(true)
 			const response = await requestApi.getConnections()
 			if (response.success && response.data) {
-				// Map connections to conversations (mock last messages for UI demo)
+				// Map user data to conversations (mock last messages for UI demo)
 				const mappedConversations: Conversation[] = response.data.map(
-					(conn, index) => {
-						const otherUser = conn.fromUserId || conn.toUserId
+					(userData, index) => {
+						// Construct name from firstName and lastName
+						const firstName = userData.firstName || ''
+						const lastName = userData.lastName || ''
+						const fullName =
+							firstName && lastName
+								? `${firstName} ${lastName}`
+								: firstName ||
+								  lastName ||
+								  userData.username ||
+								  userData.email ||
+								  'Unknown User'
+
 						return {
-							id: otherUser._id,
-							name: `${otherUser.firstName} ${otherUser.lastName}`,
-							avatar: otherUser.profileUrl || '/placeholder.svg',
+							id: userData._id,
+							name: fullName,
+							avatar: userData.profileUrl || '/placeholder.svg',
 							lastMessage:
 								index === 0
 									? 'Hey! Would you like to collaborate?'

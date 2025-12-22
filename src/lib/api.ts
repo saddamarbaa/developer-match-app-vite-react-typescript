@@ -166,7 +166,22 @@ export const requestApi = {
 	},
 
 	getConnections: async () => {
-		return apiRequest<Array<Connection>>('/user/match/connections', {
+		return apiRequest<
+			Array<{
+				_id: string
+				firstName?: string
+				lastName?: string
+				email?: string
+				gender?: string
+				bio?: string
+				skills?: string[]
+				profileUrl?: string
+				username?: string
+				isEmailVerified?: boolean
+				createdAt?: string
+				updatedAt?: string
+			}>
+		>('/user/match/connections', {
 			method: 'GET',
 		})
 	},
@@ -197,23 +212,24 @@ export const requestApi = {
 			method: 'POST',
 		})
 	},
+
 	getRejected: async () => {
 		return apiRequest<
 			Array<{
 				_id: string
-				toUserId: {
-					_id: string
-					firstName: string
-					lastName: string
-					email: string
-					gender?: string
-					bio?: string
-					skills?: string[]
-					profileUrl?: string
-				}
-				status: string
+				firstName?: string
+				lastName?: string
+				email?: string
+				gender?: string
+				bio?: string
+				skills?: string[]
+				profileUrl?: string
+				username?: string
+				isEmailVerified?: boolean
+				createdAt?: string
+				updatedAt?: string
 			}>
-		>('/user/requests/ignored', {
+		>('/user/reject/connections', {
 			method: 'GET',
 		})
 	},

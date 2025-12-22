@@ -10,12 +10,12 @@ import { toast } from '@/hooks/use-toast'
 import { RequestListSkeleton } from '@/components/skeletons/RequestCardSkeleton'
 
 interface RejectedDeveloper {
-	requestId: string
 	id: string
 	name: string
 	avatar: string
 	bio: string
 	skills: string[]
+	email?: string
 }
 
 const Rejected = () => {
@@ -30,16 +30,31 @@ const Rejected = () => {
 	const fetchRejected = async () => {
 		setIsLoading(true)
 		const response = await requestApi.getRejected()
+
 		if (response.success && response.data) {
-			const mappedRejected: RejectedDeveloper[] = response.data.map((req) => ({
-				requestId: req._id,
-				id: req.toUserId._id,
-				name: `${req.toUserId.firstName} ${req.toUserId.lastName}`,
-				avatar: req.toUserId.profileUrl || '/placeholder.svg',
-				bio: req.toUserId.bio || 'No bio available',
-				skills: req.toUserId.skills || [],
-			}))
-			setRejected(mappedRejected)
+			const mappedDevs: RejectedDeveloper[] = response.data.map((user) => {
+				// Construct name from firstName and lastName, fallback to email or username
+				const firstName = user.firstName || ''
+				const lastName = user.lastName || ''
+				const fullName =
+					firstName && lastName
+						? `${firstName} ${lastName}`
+						: firstName ||
+						  lastName ||
+						  user.username ||
+						  user.email ||
+						  'Unknown User'
+
+				return {
+					id: user._id,
+					name: fullName,
+					avatar: user.profileUrl || '/placeholder.svg',
+					bio: user.bio || 'No bio available',
+					skills: user.skills || [],
+					email: user.email,
+				}
+			})
+			setRejected(mappedDevs)
 		} else {
 			toast({
 				title: 'Error',
@@ -50,18 +65,14 @@ const Rejected = () => {
 		setIsLoading(false)
 	}
 
-	const handleReconsider = async (
-		requestId: string,
-		userId: string,
-		name: string,
-	) => {
-		setProcessingIds((prev) => new Set(prev).add(requestId))
+	const handleReconsider = async (userId: string, name: string) => {
+		setProcessingIds((prev) => new Set(prev).add(userId))
 
-		// Send a new interested request to reconsider
+		// Send request - backend will update existing ignored connection to interested
 		const response = await requestApi.sendRequest(userId, 'interested')
 
 		if (response.success) {
-			setRejected((prev) => prev.filter((dev) => dev.requestId !== requestId))
+			setRejected((prev) => prev.filter((dev) => dev.id !== userId))
 			toast({
 				title: '💚 Reconsidered!',
 				description: `You've shown interest in ${name} again!`,
@@ -76,7 +87,7 @@ const Rejected = () => {
 
 		setProcessingIds((prev) => {
 			const next = new Set(prev)
-			next.delete(requestId)
+			next.delete(userId)
 			return next
 		})
 	}
@@ -124,7 +135,7 @@ const Rejected = () => {
 					<div className="gap-4 grid">
 						{rejected.map((dev) => (
 							<Card
-								key={dev.requestId}
+								key={dev.id}
 								className="bg-card/50 backdrop-blur-sm border-border/50 hover:border-primary/50 transition-colors">
 								<CardContent className="p-4">
 									<div className="flex items-start gap-4">
@@ -134,7 +145,8 @@ const Rejected = () => {
 												{dev.name
 													.split(' ')
 													.map((n) => n[0])
-													.join('')}
+													.join('')
+													.toUpperCase()}
 											</AvatarFallback>
 										</Avatar>
 
@@ -165,10 +177,8 @@ const Rejected = () => {
 
 											<Button
 												size="sm"
-												onClick={() =>
-													handleReconsider(dev.requestId, dev.id, dev.name)
-												}
-												disabled={processingIds.has(dev.requestId)}
+												onClick={() => handleReconsider(dev.id, dev.name)}
+												disabled={processingIds.has(dev.id)}
 												className="gap-2">
 												<RotateCcw className="w-4 h-4" />
 												Reconsider

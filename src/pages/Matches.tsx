@@ -22,18 +22,36 @@ const Matches = () => {
 			const response = await requestApi.getConnections()
 
 			if (response.success && response.data) {
-				const mappedConnections = response.data.map((user) => {
-					// The other user in the connection (could be fromUserId or toUserId)
+				const mappedConnections: Connection[] = response.data.map(
+					(userData) => {
+						// Construct name from firstName and lastName
+						const firstName = userData.firstName || ''
+						const lastName = userData.lastName || ''
+						const fullName =
+							firstName && lastName
+								? `${firstName} ${lastName}`
+								: firstName ||
+								  lastName ||
+								  userData.username ||
+								  userData.email ||
+								  'Unknown User'
 
-					return {
-						id: user._id,
-						name: `${user.firstName} ${user.lastName}`,
-						avatar: user.profileUrl || '/placeholder.svg',
-						bio: user.bio || 'No bio available',
-						skills: user.skills || [],
-						github: user.email?.split('@')[0],
-					}
-				}) as Connection[]
+						return {
+							id: userData._id,
+							_id: userData._id,
+							firstName: userData.firstName || '',
+							lastName: userData.lastName || '',
+							email: userData.email || '',
+							gender: userData.gender,
+							name: fullName,
+							avatar: userData.profileUrl || '/placeholder.svg',
+							profileUrl: userData.profileUrl,
+							bio: userData.bio || 'No bio available',
+							skills: userData.skills || [],
+							github: userData.email?.split('@')[0],
+						}
+					},
+				)
 
 				setConnections(mappedConnections)
 			} else {
