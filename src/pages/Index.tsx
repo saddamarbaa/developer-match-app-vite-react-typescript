@@ -24,27 +24,20 @@ const Index = () => {
 		setIsLoading(true)
 		const response = await feedApi.getFeed()
 		if (response.success && response.data) {
-			const mappedDevs: Developer[] = response.data?.users?.map((user) => {
-				return {
-					id: user._id,
-					name:
-						user?.username ||
-						user?.firstName ||
-						user.lastName ||
-						user.email ||
-						'Unknown User',
-					age: 25, // Default age as API doesn't provide it
-					avatar: user.profileUrl || '/placeholder.svg',
-					title: user.bio?.split('.')[0] || 'Developer',
-					bio: user.bio || 'No bio available',
-					location: 'Remote',
-					experience: 2,
-					skills: user.skills || [],
-					lookingFor: 'collaborator' as const,
-					github: user.email?.split('@')[0],
-					availability: 'flexible' as const,
-				}
-			})
+			const mappedDevs: Developer[] = response.data?.users.map((user) => ({
+				id: user._id,
+				name: `${user.firstName} ${user.lastName}`,
+				age: 25, // Default age as API doesn't provide it
+				avatar: user.profileUrl || '/placeholder.svg',
+				title: user.bio?.split('.')[0] || 'Developer',
+				bio: user.bio || 'No bio available',
+				location: 'Remote',
+				experience: 2,
+				skills: user.skills || [],
+				lookingFor: 'collaborator' as const,
+				github: user.email?.split('@')[0],
+				availability: 'flexible' as const,
+			}))
 			setAllDevs(mappedDevs)
 			setCurrentIndex(0)
 			setHistory([])
@@ -98,12 +91,17 @@ const Index = () => {
 				)
 
 				if (response.success) {
-					if (
-						response.message?.toLowerCase().includes('match') ||
-						direction === 'up'
-					) {
+					if (response.message?.toLowerCase().includes('match')) {
 						setMatches((prev) => [...prev, currentDev])
 						setMatchedDev(currentDev)
+					} else if (direction === 'up') {
+						// Super Like - special notification
+						setMatches((prev) => [...prev, currentDev])
+						toast({
+							title: '⭐ Super Liked!',
+							description: `You super liked ${currentDev.name}! They'll see you first!`,
+							className: 'border-primary bg-primary/10',
+						})
 					} else {
 						toast({
 							title: '💚 Liked!',
@@ -178,6 +176,7 @@ const Index = () => {
 						setHistory([])
 					}}
 				/>
+
 				{/* Card stack */}
 				<div className="relative flex-1 mb-4">
 					{isLoading ? (
@@ -209,15 +208,13 @@ const Index = () => {
 					)}
 				</div>
 
-				{/* Swipe buttons  */}
-				{!isLoading && !isComplete && (
-					<SwipeButtons
-						onSwipe={handleSwipe}
-						onUndo={handleUndo}
-						canUndo={history.length > 0}
-						disabled={isComplete}
-					/>
-				)}
+				{/* Swipe buttons */}
+				<SwipeButtons
+					onSwipe={handleSwipe}
+					onUndo={handleUndo}
+					canUndo={history.length > 0}
+					disabled={isComplete}
+				/>
 			</main>
 
 			{/* Match modal */}
