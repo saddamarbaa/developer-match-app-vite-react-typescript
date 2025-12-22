@@ -153,16 +153,16 @@ const Index = () => {
 	}
 
 	return (
-		<div className="min-h-screen bg-background flex flex-col">
+		<div className="flex flex-col bg-background min-h-screen">
 			{/* Background gradient */}
 			<div
-				className="fixed inset-0 pointer-events-none opacity-30"
+				className="fixed inset-0 opacity-30 pointer-events-none"
 				style={{ background: 'var(--gradient-radial)' }}
 			/>
 
 			<Header matchCount={matches.length} />
 
-			<main className="flex-1 flex flex-col max-w-md mx-auto w-full px-4 pb-4">
+			<main className="flex flex-col flex-1 mx-auto px-4 pb-4 w-full max-w-md">
 				{/* Search and Filters */}
 				<FeedFilters
 					searchQuery={searchQuery}
@@ -179,7 +179,7 @@ const Index = () => {
 					}}
 				/>
 				{/* Card stack */}
-				<div className="flex-1 relative mb-4">
+				<div className="relative flex-1 mb-4">
 					{isLoading ? (
 						<DevCardSkeleton />
 					) : isComplete ? (
@@ -210,7 +210,7 @@ const Index = () => {
 				</div>
 
 				{/* Swipe buttons  */}
-				{!isLoading && (
+				{!isLoading && !isComplete && (
 					<SwipeButtons
 						onSwipe={handleSwipe}
 						onUndo={handleUndo}

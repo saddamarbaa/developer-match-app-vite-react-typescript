@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Header } from '@/components/Header'
 import { requestApi } from '@/lib/api'
 import { Badge } from '@/components/ui/badge'
@@ -8,17 +9,10 @@ import { Button } from '@/components/ui/button'
 import { MessageCircle, Github } from 'lucide-react'
 import { toast } from '@/hooks/use-toast'
 import { MatchListSkeleton } from '@/components/skeletons/MatchCardSkeleton'
-
-interface Connection {
-	id: string
-	name: string
-	avatar: string
-	bio: string
-	skills: string[]
-	github?: string
-}
+import { Connection } from '@/types/developer'
 
 const Matches = () => {
+	const navigate = useNavigate()
 	const [connections, setConnections] = useState<Connection[]>([])
 	const [isLoading, setIsLoading] = useState(true)
 
@@ -26,19 +20,39 @@ const Matches = () => {
 		const fetchConnections = async () => {
 			setIsLoading(true)
 			const response = await requestApi.getConnections()
+
 			if (response.success && response.data) {
-				const mappedConnections: Connection[] = response.data.map((conn) => {
-					// The other user in the connection (could be fromUserId or toUserId)
-					const otherUser = conn.fromUserId || conn.toUserId
-					return {
-						id: otherUser._id,
-						name: `${otherUser.firstName} ${otherUser.lastName}`,
-						avatar: otherUser.profileUrl || '/placeholder.svg',
-						bio: otherUser.bio || 'No bio available',
-						skills: otherUser.skills || [],
-						github: otherUser.email?.split('@')[0],
-					}
-				})
+				const mappedConnections: Connection[] = response.data.map(
+					(userData) => {
+						// Construct name from firstName and lastName
+						const firstName = userData.firstName || ''
+						const lastName = userData.lastName || ''
+						const fullName =
+							firstName && lastName
+								? `${firstName} ${lastName}`
+								: firstName ||
+								  lastName ||
+								  userData.username ||
+								  userData.email ||
+								  'Unknown User'
+
+						return {
+							id: userData._id,
+							_id: userData._id,
+							firstName: userData.firstName || '',
+							lastName: userData.lastName || '',
+							email: userData.email || '',
+							gender: userData.gender,
+							name: fullName,
+							avatar: userData.profileUrl || '/placeholder.svg',
+							profileUrl: userData.profileUrl,
+							bio: userData.bio || 'No bio available',
+							skills: userData.skills || [],
+							github: userData.email?.split('@')[0],
+						}
+					},
+				)
+
 				setConnections(mappedConnections)
 			} else {
 				toast({
@@ -54,16 +68,16 @@ const Matches = () => {
 	}, [])
 
 	return (
-		<div className="min-h-screen bg-background flex flex-col">
+		<div className="flex flex-col bg-background min-h-screen">
 			<div
-				className="fixed inset-0 pointer-events-none opacity-30"
+				className="fixed inset-0 opacity-30 pointer-events-none"
 				style={{ background: 'var(--gradient-radial)' }}
 			/>
 
 			<Header matchCount={connections.length} />
 
-			<main className="flex-1 max-w-2xl mx-auto w-full px-4 py-6">
-				<h1 className="text-2xl font-bold text-foreground mb-6">
+			<main className="flex-1 mx-auto px-4 py-6 w-full max-w-2xl">
+				<h1 className="mb-6 font-bold text-foreground text-2xl">
 					Your Matches
 				</h1>
 
@@ -71,27 +85,27 @@ const Matches = () => {
 					<MatchListSkeleton />
 				) : connections.length === 0 ? (
 					<Card className="bg-card/50 backdrop-blur-sm border-border/50">
-						<CardContent className="flex flex-col items-center justify-center py-12">
+						<CardContent className="flex flex-col justify-center items-center py-12">
 							<p className="text-muted-foreground text-center">
 								No matches yet. Start swiping to find your dev match!
 							</p>
 							<Button
 								variant="default"
 								className="mt-4"
-								onClick={() => (window.location.href = '/')}>
+								onClick={() => navigate('/')}>
 								Start Swiping
 							</Button>
 						</CardContent>
 					</Card>
 				) : (
-					<div className="grid gap-4">
+					<div className="gap-4 grid">
 						{connections.map((connection) => (
 							<Card
 								key={connection.id}
 								className="bg-card/50 backdrop-blur-sm border-border/50 hover:border-primary/50 transition-colors">
 								<CardContent className="p-4">
 									<div className="flex items-start gap-4">
-										<Avatar className="w-16 h-16 border-2 border-primary/30">
+										<Avatar className="border-2 border-primary/30 w-16 h-16">
 											<AvatarImage
 												src={connection.avatar}
 												alt={connection.name}
@@ -120,7 +134,7 @@ const Matches = () => {
 												)}
 											</div>
 
-											<p className="text-sm text-muted-foreground line-clamp-2 mb-3">
+											<p className="mb-3 text-muted-foreground text-sm line-clamp-2">
 												{connection.bio}
 											</p>
 
@@ -142,9 +156,7 @@ const Matches = () => {
 
 											<Button
 												size="sm"
-												onClick={() =>
-													(window.location.href = `/chat/${connection.id}`)
-												}
+												onClick={() => navigate(`/chat/${connection.id}`)}
 												className="gap-2">
 												<MessageCircle className="w-4 h-4" />
 												Message

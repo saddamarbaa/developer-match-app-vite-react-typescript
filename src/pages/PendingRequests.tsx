@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Header } from '@/components/Header'
+import { useNavigate } from 'react-router-dom'
+
 import { requestApi } from '@/lib/api'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
@@ -19,6 +21,8 @@ interface PendingRequest {
 }
 
 const PendingRequests = () => {
+	const navigate = useNavigate()
+
 	const [requests, setRequests] = useState<PendingRequest[]>([])
 	const [isLoading, setIsLoading] = useState(true)
 	const [processingIds, setProcessingIds] = useState<Set<string>>(new Set())
@@ -114,7 +118,7 @@ const PendingRequests = () => {
 							<Button
 								variant="default"
 								className="mt-4"
-								onClick={() => (window.location.href = '/')}>
+								onClick={() => navigate('/')}>
 								Find Developers
 							</Button>
 						</CardContent>
