@@ -39,6 +39,14 @@ interface AuthContextType {
 	signup: (payload: SignupPayload) => Promise<{ error?: string }>
 	logout: () => void
 	refreshProfile: () => Promise<void>
+	forgotPassword: (
+		email: string,
+	) => Promise<{ error?: string; message?: string; resetUrl?: string }>
+	resetPassword: (
+		token: string,
+		newPassword: string,
+		userId: string,
+	) => Promise<{ error?: string }>
 }
 
 const AuthContext = createContext<AuthContextType | null>(null)
@@ -185,9 +193,49 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 		}
 	}, [])
 
+	const forgotPassword = useCallback(async (email: string) => {
+		setIsLoading(true)
+		const response = await authApi.forgotPassword(email)
+		setIsLoading(false)
+
+		if (!response.success) {
+			return { error: response.message || 'Failed to send reset email' }
+		}
+
+		const resetUrl =
+			(response.data as { user?: { resetPasswordToken?: string } })?.user
+				?.resetPasswordToken || null
+
+		return { message: response.message, resetUrl }
+	}, [])
+
+	const resetPassword = useCallback(
+		async (token: string, newPassword: string, userId: string) => {
+			setIsLoading(true)
+			const response = await authApi.resetPassword(token, newPassword, userId)
+			setIsLoading(false)
+
+			if (!response.success) {
+				return { error: response.message || 'Failed to reset password' }
+			}
+
+			return {}
+		},
+		[],
+	)
+
 	return (
 		<AuthContext.Provider
-			value={{ user, isLoading, login, signup, logout, refreshProfile }}>
+			value={{
+				user,
+				isLoading,
+				login,
+				signup,
+				logout,
+				refreshProfile,
+				forgotPassword,
+				resetPassword,
+			}}>
 			{children}
 		</AuthContext.Provider>
 	)
