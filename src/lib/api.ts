@@ -122,6 +122,28 @@ export const authApi = {
 			method: 'DELETE',
 		})
 	},
+
+	forgotPassword: async (email: string) => {
+		return apiRequest<{
+			user: {
+				resetPasswordToken: string
+			}
+		}>('/auth/forget-password', {
+			method: 'POST',
+			body: JSON.stringify({ email }),
+		})
+	},
+
+	resetPassword: async (token: string, newPassword: string, userId: string) => {
+		console.log(token)
+		return apiRequest<null>(`/auth/reset-password/${userId}/${token}`, {
+			method: 'POST',
+			body: JSON.stringify({
+				password: newPassword,
+				confirmPassword: newPassword,
+			}),
+		})
+	},
 }
 
 // Feed API endpoints
