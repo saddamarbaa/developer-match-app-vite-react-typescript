@@ -1,113 +1,124 @@
 import { useState, useEffect, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { Header } from '@/components/Header'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { ArrowLeft, Send, Smile } from 'lucide-react'
 
+import { toast } from '@/hooks/use-toast'
+import { socket } from '@/socket'
+import { useAuth } from '@/contexts/AuthContext'
+
 interface Message {
 	id: string
 	text: string
-	sender: 'me' | 'other'
+	senderId: string
 	timestamp: Date
 }
 
-// Mock data for UI demonstration
-const mockConversations: Record<
-	string,
-	{ name: string; avatar: string; messages: Message[] }
-> = {
-	'1': {
-		name: 'Sarah Chen',
-		avatar: '/placeholder.svg',
-		messages: [
-			{
-				id: '1',
-				text: 'Hey! I saw your profile and loved your React projects!',
-				sender: 'other',
-				timestamp: new Date(Date.now() - 3600000),
-			},
-			{
-				id: '2',
-				text: 'Thanks! Your work on that GraphQL API looks impressive too',
-				sender: 'me',
-				timestamp: new Date(Date.now() - 3500000),
-			},
-			{
-				id: '3',
-				text: 'Would you be interested in collaborating on an open source project?',
-				sender: 'other',
-				timestamp: new Date(Date.now() - 3400000),
-			},
-		],
-	},
-}
-
 const Chat = () => {
-	const { id } = useParams<{ id: string }>()
+	const { user } = useAuth()
+	const { id: otherUserId } = useParams<{ id: string }>()
 	const navigate = useNavigate()
+
 	const [message, setMessage] = useState('')
 	const [messages, setMessages] = useState<Message[]>([])
 	const [otherUser, setOtherUser] = useState({
 		name: 'Developer',
 		avatar: '/placeholder.svg',
 	})
+	const [isConnected, setIsConnected] = useState(false)
 	const messagesEndRef = useRef<HTMLDivElement>(null)
 
-	useEffect(() => {
-		// Load mock conversation or create empty one
-		const conversation = mockConversations[id || ''] || {
-			name: 'Developer',
-			avatar: '/placeholder.svg',
-			messages: [],
-		}
-		setOtherUser({ name: conversation.name, avatar: conversation.avatar })
-		setMessages(conversation.messages)
-	}, [id])
+	// SAME chatId for both users
+	const chatId = [user.id, otherUserId].sort().join('_')
 
+	/* ---------------- SOCKET CONNECTION ---------------- */
+	useEffect(() => {
+		if (!user?.id || !otherUserId) return
+
+		socket.connect()
+
+		const onConnect = () => {
+			console.log('✅ Socket connected:', socket.id)
+			setIsConnected(true)
+
+			socket.emit('userOnline', user.id)
+
+			// 👉 CLIENT EMITS joinChat
+			socket.emit('joinChatRoom', {
+				name: user.name,
+				userId: user.id,
+				targetUserId: otherUserId,
+			})
+		}
+
+		const onReceiveMessage = (incomingMessage: Message) => {
+			setMessages((prev) => [...prev, incomingMessage])
+		}
+
+		const onDisconnect = () => {
+			console.log('❌ Socket disconnected')
+			setIsConnected(false)
+		}
+
+		socket.on('connect', onConnect)
+		socket.on('receiveMessage', onReceiveMessage)
+		socket.on('disconnect', onDisconnect)
+
+		return () => {
+			socket.off('connect', onConnect)
+			socket.off('receiveMessage', onReceiveMessage)
+			socket.off('disconnect', onDisconnect)
+			socket.disconnect()
+		}
+	}, [user.id, otherUserId, user.name])
+
+	/* ---------------- AUTO SCROLL ---------------- */
 	useEffect(() => {
 		messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
 	}, [messages])
 
+	/* ---------------- SEND MESSAGE ---------------- */
+
 	const handleSend = () => {
-		if (!message.trim()) return
+		if (!isConnected) {
+			toast({
+				title: 'Disconnected',
+				description: 'Reconnecting to chat server...',
+				variant: 'destructive',
+			})
+			return
+		}
+
+		if (!message.trim() || !otherUserId) return
 
 		const newMessage: Message = {
 			id: Date.now().toString(),
 			text: message,
-			sender: 'me',
+			senderId: user.id,
 			timestamp: new Date(),
 		}
 
-		setMessages((prev) => [...prev, newMessage])
 		setMessage('')
 
-		// Simulate response after a short delay (UI demo only)
-		setTimeout(() => {
-			const response: Message = {
-				id: (Date.now() + 1).toString(),
-				text: "That sounds great! Let's discuss more details.",
-				sender: 'other',
-				timestamp: new Date(),
-			}
-			setMessages((prev) => [...prev, response])
-		}, 1500)
+		socket.emit('sendMessage', { roomId: chatId, message: newMessage })
+		socket.emit('stopTyping', { roomId: chatId, userId: user.id })
 	}
 
-	const formatTime = (date: Date) => {
-		return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-	}
+	/* ---------------- FORMAT TIME ---------------- */
+	const formatTime = (date: Date) =>
+		new Date(date).toLocaleTimeString([], {
+			hour: '2-digit',
+			minute: '2-digit',
+		})
 
+	/* ---------------- UI ---------------- */
+	/* ---------------- UI ---------------- */
 	return (
-		<div className="min-h-screen bg-background flex flex-col">
-			<div
-				className="fixed inset-0 pointer-events-none opacity-30"
-				style={{ background: 'var(--gradient-radial)' }}
-			/>
-
-			{/* Chat Header */}
-			<header className="flex items-center gap-3 p-4 border-b border-border/50 bg-background/80 backdrop-blur-sm">
+		<div className="flex flex-col bg-background h-screen overflow-hidden">
+			{/* HEADER (FIXED) */}
+			<header className="flex items-center gap-3 p-4 border-b shrink-0">
 				<Button
 					variant="ghost"
 					size="icon"
@@ -115,9 +126,9 @@ const Chat = () => {
 					<ArrowLeft className="w-5 h-5" />
 				</Button>
 
-				<Avatar className="w-10 h-10 border border-primary/30">
-					<AvatarImage src={otherUser.avatar} alt={otherUser.name} />
-					<AvatarFallback className="bg-primary/20 text-primary">
+				<Avatar className="w-10 h-10">
+					<AvatarImage src={otherUser.avatar} />
+					<AvatarFallback>
 						{otherUser.name
 							.split(' ')
 							.map((n) => n[0])
@@ -126,79 +137,62 @@ const Chat = () => {
 				</Avatar>
 
 				<div className="flex-1">
-					<h2 className="font-semibold text-foreground">{otherUser.name}</h2>
-					<p className="text-xs text-green-500">Online</p>
+					<h2 className="font-semibold">{otherUser.name}</h2>
+					<p
+						className={`text-xs ${
+							isConnected ? 'text-green-500' : 'text-red-500'
+						}`}>
+						{isConnected ? 'Online' : 'Offline'}
+					</p>
 				</div>
 			</header>
 
-			{/* Messages */}
-			<main className="flex-1 overflow-y-auto p-4 space-y-4">
-				{messages.length === 0 ? (
-					<div className="flex flex-col items-center justify-center h-full text-center">
-						<Avatar className="w-20 h-20 mb-4 border-2 border-primary/30">
-							<AvatarImage src={otherUser.avatar} alt={otherUser.name} />
-							<AvatarFallback className="bg-primary/20 text-primary text-2xl">
-								{otherUser.name
-									.split(' ')
-									.map((n) => n[0])
-									.join('')}
-							</AvatarFallback>
-						</Avatar>
-						<p className="text-muted-foreground">
-							Start a conversation with {otherUser.name}
-						</p>
-					</div>
-				) : (
-					messages.map((msg) => (
+			{/* MESSAGES (SCROLL ONLY HERE) */}
+			<main className="flex-1 space-y-3 px-4 py-3 overflow-y-auto">
+				{messages.map((msg) => (
+					<div
+						key={msg.id}
+						className={`flex ${
+							msg.senderId === user.id ? 'justify-end' : 'justify-start'
+						}`}>
 						<div
-							key={msg.id}
-							className={`flex ${
-								msg.sender === 'me' ? 'justify-end' : 'justify-start'
+							className={`max-w-[75%] px-4 py-2 rounded-2xl ${
+								msg.senderId === user.id
+									? 'bg-primary text-primary-foreground'
+									: 'bg-secondary'
 							}`}>
-							<div
-								className={`max-w-[75%] rounded-2xl px-4 py-2 ${
-									msg.sender === 'me'
-										? 'bg-primary text-primary-foreground rounded-br-md'
-										: 'bg-secondary text-secondary-foreground rounded-bl-md'
-								}`}>
-								<p className="text-sm">{msg.text}</p>
-								<p
-									className={`text-[10px] mt-1 ${
-										msg.sender === 'me'
-											? 'text-primary-foreground/70'
-											: 'text-muted-foreground'
-									}`}>
-									{formatTime(msg.timestamp)}
-								</p>
-							</div>
+							<p className="text-sm">{msg.text}</p>
+							<p className="opacity-70 mt-1 text-[10px]">
+								{formatTime(msg.timestamp)}
+							</p>
 						</div>
-					))
-				)}
+					</div>
+				))}
 				<div ref={messagesEndRef} />
 			</main>
 
-			{/* Message Input */}
-			<div className="p-4 border-t border-border/50 bg-background/80 backdrop-blur-sm">
-				<div className="flex items-center gap-2 max-w-2xl mx-auto">
-					<Button variant="ghost" size="icon" className="shrink-0">
-						<Smile className="w-5 h-5 text-muted-foreground" />
+			{/* INPUT (FIXED) */}
+			<footer className="p-4 border-t shrink-0">
+				<div className="flex gap-2">
+					<Button variant="ghost" size="icon">
+						<Smile className="w-5 h-5" />
 					</Button>
+
 					<Input
-						placeholder="Type a message..."
 						value={message}
 						onChange={(e) => setMessage(e.target.value)}
 						onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-						className="flex-1 bg-secondary/50 border-border/50"
+						placeholder="Type a message..."
 					/>
+
 					<Button
 						size="icon"
 						onClick={handleSend}
-						disabled={!message.trim()}
-						className="shrink-0">
+						disabled={!message.trim() || !isConnected}>
 						<Send className="w-4 h-4" />
 					</Button>
 				</div>
-			</div>
+			</footer>
 		</div>
 	)
 }
