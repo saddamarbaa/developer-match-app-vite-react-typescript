@@ -256,3 +256,28 @@ export const requestApi = {
 		})
 	},
 }
+
+// Chat API endpoints
+export const chatApi = {
+	/**
+	 * Get chat messages between two users
+	 */
+	getChat: async (userId: string, otherUserId: string) => {
+		return apiRequest<{
+			messages: Array<{
+				reactions: {}
+				_id: string
+				text: string
+				senderId: {
+					_id: string
+					firstName?: string
+					lastName?: string
+					profileUrl?: string
+				}
+				createdAt: string
+			}>
+		}>(`/chat/${userId}/${otherUserId}`, {
+			method: 'GET',
+		})
+	},
+}
